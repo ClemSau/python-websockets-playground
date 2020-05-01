@@ -1,10 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
+<html>
+    <head>
+        <title>WebSocket demo</title>
+    </head>
+    <body>
+        <div>
+            <input type="text" id="message_input">
+            <button id="send_button">send</button>
+            <span>&nbsp;</span><span id="user_count">0</span><span> online</span>
+        </div>
+        <div>
+           <ul id="thread"></ul>
+        </div>
+
+        <script>
+            // Define variables
+            var messageInput = document.querySelector('#message_input'),
+                sendButton = document.querySelector('#send_button'),
+                thread = document.querySelector('#thread'),
+                users = document.querySelector('#user_count'),
+                websocket = new WebSocket("ws://127.0.0.1:6789/");
+
+            function addMessageToThread(message) {
+                var li = document.createElement("li");
+                li.appendChild(document.createTextNode(message));
+                thread.appendChild(li);
+            }
+
+            // On minus click, send 'minus' signal to the server
+            sendButton.onclick = function (event) {
+                websocket.send(JSON.stringify({message: messageInput.value}));
+                messageInput.value = "";
+            };
+
+
+            // On websocket message,
+            websocket.onmessage = function (event) {
+                data = JSON.parse(event.data);
+                switch (data.type) {
+                    case 'thread':
+                        addMessageToThread(data.last_message.toString());
+                        break;
+                    case 'users':
+                        users.textContent = (data.count.toString());
+                        addMessageToThread(data.count_change_message.toString());
+                        break;
+                    default:
+                        console.error("unsupported event", data);
+                }
+            };
+        </script>
+    </body>
 </html>
