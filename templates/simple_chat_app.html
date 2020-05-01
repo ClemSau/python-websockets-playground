@@ -2,16 +2,26 @@
 <html>
     <head>
         <title>WebSocket demo</title>
+        <link rel="stylesheet" type="text/css" href="../css/skeleton.css" media="screen"/>
+        <link rel="stylesheet" type="text/css" href="../css/normalize.css" media="screen"/>
     </head>
     <body>
-        <div>
-            <input type="text" id="message_input">
-            <button id="send_button">send</button>
-            <span>&nbsp;</span><span id="user_count">0</span><span> online</span>
+    <div class="container">
+        <div class="row">
+            <div class="two columns"></div>
+            <div class="eight columns">
+                <div>
+                    <input type="text" id="message_input">
+                    <button id="send_button">send</button>
+                    <span>&nbsp;</span><span id="user_count">0</span><span> online</span>
+                </div>
+                <div>
+                   <ul id="thread"></ul>
+                </div>
+            </div>
+            <div class="two columns"></div>
         </div>
-        <div>
-           <ul id="thread"></ul>
-        </div>
+    </div>
 
         <script>
             // Define variables
@@ -21,9 +31,12 @@
                 users = document.querySelector('#user_count'),
                 websocket = new WebSocket("ws://127.0.0.1:6789/");
 
-            function addMessageToThread(message) {
+            function addMessageToThread(message, color=null) {
                 var li = document.createElement("li");
                 li.appendChild(document.createTextNode(message));
+                if (color !== null) {
+                    li.style.color = color;
+                }
                 thread.appendChild(li);
             }
 
@@ -38,12 +51,19 @@
             websocket.onmessage = function (event) {
                 data = JSON.parse(event.data);
                 switch (data.type) {
+                    case 'history':
+                        if (data.thread_history !== null) {
+                            for (var i = 0; i < data.thread_history.length; i ++) {
+                                addMessageToThread(data.thread_history[i], "grey")
+                            }
+                        }
+                        break;
                     case 'thread':
                         addMessageToThread(data.last_message.toString());
                         break;
                     case 'users':
                         users.textContent = (data.count.toString());
-                        addMessageToThread(data.count_change_message.toString());
+                        addMessageToThread(data.count_change_message.toString(), "blue");
                         break;
                     default:
                         console.error("unsupported event", data);
